@@ -13,4 +13,6 @@ public interface BankAccountService {
     List<Customer> retrieveALLCustomer();
 
     void deposit(Long bankAccountId, double depositAmount,String  desciption);
+
+    void withdraw(Long bankAccountId, double withdrawAmount,String  desciption);
 }

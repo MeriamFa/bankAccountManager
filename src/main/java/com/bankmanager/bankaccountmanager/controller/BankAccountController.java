@@ -40,5 +40,8 @@ public class BankAccountController {
         bankAccountService.deposit(bankAccountId, depositAmount, desciption);
     }
 
-
+    @PutMapping("/withdraw/{bankAccountId}")
+    public void withdraw(@RequestParam(name = "bankAccountId") Long bankAccountId, @RequestParam(name = "withdrawAmount") double withdrawAmount, @RequestParam(name = "description") String desciption) {
+        bankAccountService.withdraw(bankAccountId, withdrawAmount, desciption);
+    }
 }

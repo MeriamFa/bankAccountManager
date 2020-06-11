@@ -50,5 +50,17 @@ public class BankAccountServiceImpl implements BankAccountService {
         }
     }
 
+    @Override
+    public void withdraw(Long bankAccountId, double withdrawAmount, String desciption) {
+        BankAccount bankAccount = bankAccountRepository.findById(bankAccountId).get();
+        BigDecimal newBalance=bankAccount.getAccountBalance().subtract(new BigDecimal(withdrawAmount) );
+        if(newBalance.compareTo(BigDecimal.ZERO) >= 0 ){
+            bankAccount.setAccountBalance(bankAccount.getAccountBalance().subtract(new BigDecimal(withdrawAmount)));
+            bankAccountRepository.save(bankAccount);
+            AccountTransaction accountTransaction = new AccountTransaction(new Date(), desciption, withdrawAmount, bankAccount);
+            accountTransactionService.saveAccountTransaction(accountTransaction);
+        }
+    }
+
 
 }
