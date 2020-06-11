@@ -1,27 +1,32 @@
 package com.bankmanager.bankaccountmanager.service;
 
+import com.bankmanager.bankaccountmanager.modele.AccountTransaction;
 import com.bankmanager.bankaccountmanager.modele.BankAccount;
 import com.bankmanager.bankaccountmanager.modele.Customer;
 import com.bankmanager.bankaccountmanager.repository.BankAccountRepository;
-import com.bankmanager.bankaccountmanager.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BankAccountServiceImpl implements BankAccountService {
 
+    private static final double LIMIT_DEPOSIT = 0.01;
     @Autowired
     private BankAccountRepository bankAccountRepository;
 
     @Autowired
-    private CustomerRepository customerRepository;
+    private CustomerService customerService;
+
+    @Autowired
+    private AccountTransactionService accountTransactionService;
 
     @Override
-    public Optional<BankAccount> retrieveBankAccount(Long bankAccountID) {
-        return bankAccountRepository.findById(bankAccountID);
+    public BankAccount retrieveBankAccount(Long bankAccountID) {
+        return bankAccountRepository.findById(bankAccountID).get();
     }
 
     @Override
@@ -31,6 +36,19 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     @Override
     public List<Customer> retrieveALLCustomer() {
-        return customerRepository.findAll();
+        return customerService.retrieveALLCustomer();
     }
+
+    @Override
+    public void deposit(Long bankAccountId, double depositAmount, String desciption) {
+        BankAccount bankAccount = bankAccountRepository.findById(bankAccountId).get();
+        if (depositAmount > LIMIT_DEPOSIT) {
+            bankAccount.setAccountBalance(bankAccount.getAccountBalance().add(new BigDecimal(depositAmount)));
+            bankAccountRepository.save(bankAccount);
+            AccountTransaction accountTransaction = new AccountTransaction(new Date(), desciption, depositAmount, bankAccount);
+            accountTransactionService.saveAccountTransaction(accountTransaction);
+        }
+    }
+
+
 }
