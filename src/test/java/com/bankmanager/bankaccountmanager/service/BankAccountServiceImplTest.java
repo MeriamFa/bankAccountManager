@@ -17,6 +17,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -26,6 +28,7 @@ public class BankAccountServiceImplTest {
     private static final long BANK_ACCOUNT_ID = 103L;
     private static final String DESCIPTION = "deposit";
     private static final double DEPOSIT_AMOUNT_LIMIT = 0.01;
+    private static final String WITHDRAW_OPERATION = "withdraw operation";
 
     @InjectMocks
     private BankAccountService bankAccountService = new BankAccountServiceImpl();
@@ -68,7 +71,7 @@ public class BankAccountServiceImplTest {
     }
 
     @Test
-    public void givenDepositAmountlessthanlimitThenDoNotSaveBankAccount() {
+    public void givenDepositAmountlessthanlimitThenDoNotCallSaveBankAccount() {
         bankAccountService.deposit(BANK_ACCOUNT_ID, DEPOSIT_AMOUNT_LIMIT, DESCIPTION);
         verify(bankAccountRepository, never()).save(bankAccount);
         verify(accountTransactionService, never()).saveAccountTransaction(any());
@@ -90,5 +93,45 @@ public class BankAccountServiceImplTest {
     @Test(expected = NoSuchElementException.class)
     public void givenbankAccountNullIdThenRetrieveBankAccountKo() {
         bankAccountService.retrieveBankAccount(104L);
+    }
+
+    @Test
+    public void givenWithdrawAmountLessThanAccountBalanceThenDoNotCallSaveBankAccount() {
+        //Given
+        BankAccount bankAccount = new BankAccount(new BigDecimal("0"), null, customer);
+        when(bankAccountRepository.findById(BANK_ACCOUNT_ID)).thenReturn(Optional.ofNullable(bankAccount));
+        //When
+        bankAccountService.withdraw(BANK_ACCOUNT_ID, 1000, WITHDRAW_OPERATION);
+        //Then
+        verify(bankAccountRepository, never()).save(bankAccount);
+        verify(accountTransactionService, never()).saveAccountTransaction(any());
+        assertEquals(new BigDecimal(0), bankAccount.getAccountBalance());
+    }
+
+    @Test
+    public void givenWithdrawAmountequaltoAccountBalanceThenUpdateBankAccountWithZero() {
+        //Given
+        BankAccount bankAccount = new BankAccount(new BigDecimal("1000"), null, customer);
+        when(bankAccountRepository.findById(BANK_ACCOUNT_ID)).thenReturn(Optional.ofNullable(bankAccount));
+        //When
+        bankAccountService.withdraw(BANK_ACCOUNT_ID, 1000, WITHDRAW_OPERATION);
+        //Then
+        verify(bankAccountRepository).save(bankAccount);
+        verify(accountTransactionService).saveAccountTransaction(any());
+        assertEquals(new BigDecimal(0), bankAccount.getAccountBalance());
+    }
+
+    @Test
+    public void givenWithdrawAmountbigerthanAccountBalanceThenupdateBankAccountWithNewAmount() {
+        //Given
+        BankAccount bankAccount = new BankAccount(new BigDecimal("2000"), null, customer);
+        when(bankAccountRepository.findById(BANK_ACCOUNT_ID)).thenReturn(Optional.ofNullable(bankAccount));
+        //When
+        bankAccountService.withdraw(BANK_ACCOUNT_ID, 1000, WITHDRAW_OPERATION);
+        //Then
+        verify(bankAccountRepository).save(bankAccount);
+        verify(accountTransactionService).saveAccountTransaction(any());
+        assertEquals(new BigDecimal(1000), bankAccount.getAccountBalance());
+
     }
 }
